@@ -12,6 +12,6 @@ It is also assumed you have the latest version of Android Studio installed.
 
 ## Download the Container and Start the App
 
-* [Downloading the Android Predix Mobile App Container] (https://www.predix.io/TBD) *insert link here*
-* [Starting your Android Sample App] (https://www.predix.io/docs/TBD) *insert link here*
+* [Downloading the Android Predix Mobile App Container] (https://www.predix.io/docs#Qq95Ds6H) 
+
 
