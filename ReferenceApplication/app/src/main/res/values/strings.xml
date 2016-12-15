@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Predix Reference</string>
+    <string name="server_url">Host</string>
+    <string name="None">None</string>
+    <string name="Fatal">Fatal</string>
+    <string name="Error">Error</string>
+    <string name="Warn">Warn</string>
+    <string name="Info">Info</string>
+    <string name="Debug">Debug</string>
+    <string name="Trace">Trace</string>
+    <string name="server_url_summary">The full URL to your Predix Mobile bounded application</string>
+    <string name="loggingLevel">Logging Level</string>
+    <string name="inline_preferences">Predix Mobile</string>
+    <string name="settings">Settings</string>
+    <string name="toast" />
+</resources>

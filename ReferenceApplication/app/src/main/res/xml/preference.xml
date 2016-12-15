@@ -1,0 +1,23 @@
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="@string/inline_preferences">
+
+        <EditTextPreference
+            android:key="server_hostname"
+            android:defaultValue=""
+            android:summary="@string/server_url_summary"
+            android:inputType="textUri"
+            android:title="@string/server_url" />
+
+        <ListPreference
+            android:key="logging_level"
+            android:title="@string/loggingLevel"
+            android:entries="@array/LoggingNames"
+            android:entryValues="@array/LoggingValues"
+            android:defaultValue="6"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
