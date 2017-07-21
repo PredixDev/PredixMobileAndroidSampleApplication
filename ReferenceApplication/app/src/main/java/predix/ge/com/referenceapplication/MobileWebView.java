@@ -3,12 +3,13 @@ package predix.ge.com.referenceapplication;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.webkit.ValueCallback;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.ge.predix.mobile.enums.WaitState;
 import com.ge.predix.mobile.logging.PredixSDKLogger;
 import com.ge.predix.mobile.platform.CustomSchemeHandler;
@@ -18,6 +19,8 @@ import com.ge.predix.mobile.platform.WindowView;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by 212572548 on 9/16/16.
@@ -26,7 +29,9 @@ public class MobileWebView implements WindowView {
     private final WebView webView;
     private ProgressDialog spinner;
     private WaitStateModel waitStateModel;
-
+    private final LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+    private final AtomicBoolean isWebViewProcessing = new AtomicBoolean(false);
+    private boolean spinnerIsShowing = false;
 
     public MobileWebView(WebView webView) {
         this.webView = webView;
@@ -51,11 +56,29 @@ public class MobileWebView implements WindowView {
                     @Override
                     public void onReceiveValue(String response) {
                         PredixSDKLogger.trace(this, "evaluateJavascript response: "+response);
+                        Runnable task = queue.poll();
+                        if (null != task) {
+                            PredixSDKLogger.info(this, "Starting another task, pending are: "+queue.size());
+                            webView.post(task);
+                        }
+                        else {
+                            isWebViewProcessing.set(false);
+                            PredixSDKLogger.info(this, "No more tasks for webView :-) ");
+                        }
+
                     }
                 });
             }
         };
-        webView.post(runnable);
+        PredixSDKLogger.info(this, "Added a task to queue for webView processing.");
+        queue.offer(runnable);
+
+//        webView.post(runnable);
+        if (!isWebViewProcessing.get()) {
+            isWebViewProcessing.set(true);
+            PredixSDKLogger.info(this, "WebView started processing a task from queue, pending are: "+queue.size());
+            webView.post(queue.poll());
+        }
     }
 
     @Override
@@ -77,7 +100,7 @@ public class MobileWebView implements WindowView {
     public void updateWaitState(WaitStateModel waitStateModel) {
         this.waitStateModel = waitStateModel;
         if (waitStateModel.waitState.equals(WaitState.Waiting)) {
-            showProgressSpinner();
+            showProgressSpinner(waitStateModel.message);
         } else {
             hideSpinner();
         }
@@ -105,22 +128,35 @@ public class MobileWebView implements WindowView {
     }
 
     private void hideSpinner() {
-        if (spinner == null) return;
+        if (!spinnerIsShowing) {
+            return;
+        } else {
+            spinnerIsShowing = false;
+        }
+
         webView.post(new Runnable() {
             @Override
             public void run() {
-                spinner.dismiss();
+                if (spinner!=null) spinner.dismiss();
                 spinner = null;
             }
         });
     }
 
-    private void showProgressSpinner() {
-        if (spinner != null && spinner.isShowing()) return;
+    private void showProgressSpinner(final String message) {
+        if (spinnerIsShowing) {
+            hideSpinner();
+        }
+        spinnerIsShowing = true;
+        
         webView.post(new Runnable() {
             @Override
             public void run() {
-                spinner = ProgressDialog.show(webView.getContext(), "Syncing", "Please Wait...", true);
+                if(spinner!=null){
+                    spinner.dismiss();
+                    spinner = null;
+                }
+                spinner = ProgressDialog.show(webView.getContext(), message, "Please Wait...", true);
             }
         });
     }

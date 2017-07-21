@@ -13,11 +13,11 @@ import com.ge.predix.mobile.core.AuthHandlerCallback;
  * Created by jeremyosterhoudt on 11/1/16.
  * Copyright © 2016 GE. All rights reserved.
  */
-public class AuthenticationManager implements AuthHandler {
+public class AuthenticationHandler implements AuthHandler {
 
     private final Activity parentActivity;
 
-    public AuthenticationManager(Activity parentActivity) {
+    public AuthenticationHandler(Activity parentActivity) {
         this.parentActivity = parentActivity;
     }
 
