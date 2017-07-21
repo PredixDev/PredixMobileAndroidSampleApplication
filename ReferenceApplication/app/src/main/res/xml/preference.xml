@@ -6,7 +6,7 @@
 
         <EditTextPreference
             android:key="server_hostname"
-            android:defaultValue=""
+            android:defaultValue="preference.xml"
             android:summary="@string/server_url_summary"
             android:inputType="textUri"
             android:title="@string/server_url" />
