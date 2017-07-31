@@ -1,6 +1,8 @@
 package predix.ge.com.referenceapplication;
 
+import android.content.ComponentCallbacks2;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -25,17 +27,21 @@ import com.ge.predix.mobile.platform.WindowView;
 import com.ge.predix.mobile.sdk.android.context.PredixAndroidContext;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.ge.predix.mobile.core.PredixLocalNotificationManagerImpl.DISPLAY_ACTION;
 import static com.ge.predix.mobile.platform.PredixConstants.VersionInfoKeys.CONTAINER_VERSION_CODE;
 import static com.ge.predix.mobile.platform.PredixConstants.VersionInfoKeys.CONTAINER_VERSION_NAME;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ComponentCallbacks2{
 
     private WebView webView;
+    private NotificationAtTimeBroadcastReceiver broadcastReceiver;
+    private AuthenticationHandler authenticationHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
         webView.getSettings().setAllowFileAccessFromFileURLs(true);
         try {
             PredixSDKLogger.setLoggingLevel(LoggingLevel.trace);
-            AndroidMobileManager instance = AndroidMobileManager.instance;
+            AndroidMobileManager instance = AndroidMobileManager.getInstance();
             if (instance.isRunning()) {
                 instance.stop();
             }
@@ -69,9 +75,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
 //            registerSensorServices();
-            instance.initialize(this, buildViewInterface());
+            instance.initialize(this.getApplicationContext(), buildViewInterface());
             updateAppVersionInfo();
-            instance.start();
             webView.setWebViewClient(new ServiceRouterWebViewClient());
         } catch (InitializationException e) {
             PredixSDKLogger.error(this, "could not initialize application", e);
@@ -82,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        AndroidMobileManager.instance.onConfigurationChanged(newConfig);
+        AndroidMobileManager.getInstance().onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -93,28 +98,40 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        AndroidMobileManager.instance.onStart();
+        IntentFilter filter = new IntentFilter(DISPLAY_ACTION);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        broadcastReceiver = new NotificationAtTimeBroadcastReceiver();
+        registerReceiver(broadcastReceiver, filter);
+        AndroidMobileManager.getInstance().onStart();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        AndroidMobileManager.instance.onPause();
+        AndroidMobileManager.getInstance().onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        AndroidMobileManager.instance.onResume();
+        AndroidMobileManager.getInstance().onResume();
+        try {
+            AndroidMobileManager.getInstance().start();
+        } catch (InitializationException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        AndroidMobileManager.instance.onDestroy();
-        AndroidMobileManager instance = AndroidMobileManager.instance(this, buildViewInterface());
+        AndroidMobileManager.getInstance().onDestroy();
+        AndroidMobileManager instance = AndroidMobileManager.getInstance();
         try {
             instance.stop();
+            WebView webView = (WebView) findViewById(R.id.webView);
+            webView.removeAllViews();
+            webView.destroy();
         } catch (InitializationException e) {
             e.printStackTrace();
         }
@@ -123,38 +140,65 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        AndroidMobileManager.instance.onStop();
+        unregisterReceiver(broadcastReceiver);
+        AndroidMobileManager.getInstance().onStop();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        final String resultData = String.valueOf(null != data ? data.getDataString() : null);
+        authenticationHandler.authenticationResult(resultCode, resultData);
     }
 
     private ViewInterface buildViewInterface() {
-        final MainActivity activity = this;
-        final Properties defaultPreferences = new Properties();
+        MobileWebView mobileWebView = new MobileWebView(webView);
+        Properties defaultPreferences = new Properties();
         try {
             defaultPreferences.load(this.getAssets().open("preference_defaults.properties"));
         } catch (IOException e) {
             PredixSDKLogger.debug(this, "Exception loading preference_defaults.properties", e);
         }
-        return new ViewInterface() {
-            @Override
-            public PlatformContext getContext() {
-                return new PredixAndroidContext(MainActivity.this);
-            }
+        ViewInterfaceImpl viewInterface = new ViewInterfaceImpl(this, mobileWebView, (Map) defaultPreferences);
+        authenticationHandler = (AuthenticationHandler) viewInterface.getAuthHandler();
+        return viewInterface;
+    }
 
-            @Override
-            public Map<String, Object> getDefaultPreferences() {
-                return (Map) defaultPreferences;
-            }
+    private static class ViewInterfaceImpl implements ViewInterface {
+        private final WeakReference<MainActivity> mActivity;
+        private PredixAndroidContext predixAndroidContext;
+        private AuthHandler handler;
+        private MobileWebView mobileWebView;
+        private Map<String, Object> preferences;
+        public ViewInterfaceImpl(MainActivity activity, MobileWebView mobileWebView, Map<String, Object> preferences) {
+            mActivity = new WeakReference<>(activity);
+            MainActivity mainActivity = this.mActivity.get();
+            this.mobileWebView = mobileWebView;
+            this.preferences = preferences;
 
-            @Override
-            public AuthHandler getAuthHandler() {
-                return new AuthenticationHandler(activity);
-            }
+            this.predixAndroidContext = new PredixAndroidContext(mainActivity.getApplicationContext());
+            this.handler = new AuthenticationHandler(mainActivity);
+        }
 
-            @Override
-            public WindowView getWindowView() {
-                return new MobileWebView(webView);
-            }
-        };
+        @Override
+        public PlatformContext getContext() {
+            return predixAndroidContext;
+        }
+
+        @Override
+        public Map<String, Object> getDefaultPreferences() {
+            return preferences;
+        }
+
+        @Override
+        public AuthHandler getAuthHandler() {
+            return handler;
+        }
+
+        @Override
+        public WindowView getWindowView() {
+            return mobileWebView;
+        }
     }
 
     @Override
@@ -177,8 +221,25 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        AndroidMobileManager.getInstance().onLowMemory();
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        AndroidMobileManager.getInstance().onTrimMemory(level);
+    }
+
+    /**
+     * Updates the Predix Mobile sdk with the container's version name and code present in app's build.gradle file.
+     */
     private void updateAppVersionInfo() {
         PredixSDKLogger.debug(this, "Adding app container version information.");
+//      Similarly any other version related information can be added to the VersionInfo by add a VersionAddendumProvider.
         VersionInfo.addVersionAddendumProvider(new VersionAddendumProvider() {
             @Override
             public Map<String, String> getVersionAddendum() {

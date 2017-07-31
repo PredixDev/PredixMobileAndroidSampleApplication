@@ -27,14 +27,6 @@
         <activity android:name=".SettingsActivity"/>
         <activity android:name=".SeriousErrorActivity"/>
         <activity android:name=".AuthenticationActivity" android:noHistory="true" android:configChanges="orientation|screenSize"/>
-
-        <receiver android:name=".NotificationAtTimeBroadcastReceiver">
-            <intent-filter>
-                <action android:name="com.ge.predix.mobile.action.DISPLAY.ALARM" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
-
     </application>
 
 </manifest>

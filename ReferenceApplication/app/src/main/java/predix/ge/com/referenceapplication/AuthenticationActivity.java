@@ -16,6 +16,7 @@ import com.ge.predix.mobile.core.ServiceRouterWebViewClient;
 
 public class AuthenticationActivity extends Activity {
 
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -25,5 +26,16 @@ public class AuthenticationActivity extends Activity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new ServiceRouterWebViewClient());
         webView.loadUrl(getIntent().getStringExtra("url"));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        WebView authWebView = (WebView) findViewById(R.id.authenticationWebView);
+        if (authWebView != null) {
+            authWebView.setWebViewClient(null);
+            authWebView.removeAllViews();
+            authWebView.destroy();
+        }
     }
 }
