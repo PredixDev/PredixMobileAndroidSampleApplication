@@ -17,6 +17,8 @@ import com.ge.predix.mobile.core.ServiceRouterWebViewClient;
 public class AuthenticationActivity extends Activity {
 
 
+    public static final int AUTHENTICATION_DECLINED = 2;
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,6 +28,12 @@ public class AuthenticationActivity extends Activity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new ServiceRouterWebViewClient());
         webView.loadUrl(getIntent().getStringExtra("url"));
+    }
+
+    @Override
+    public void onBackPressed() {
+        setResult(AUTHENTICATION_DECLINED, this.getIntent());
+        finish();
     }
 
     @Override

@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements ComponentCallback
     private WebView webView;
     private NotificationAtTimeBroadcastReceiver broadcastReceiver;
     private AuthenticationHandler authenticationHandler;
+    private boolean incompleteAuthentication;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,7 +117,11 @@ public class MainActivity extends AppCompatActivity implements ComponentCallback
         super.onResume();
         AndroidMobileManager.getInstance().onResume();
         try {
-            AndroidMobileManager.getInstance().start();
+            if (!incompleteAuthentication) {
+                AndroidMobileManager.getInstance().start();
+            } else {
+                finish();
+            }
         } catch (InitializationException e) {
             e.printStackTrace();
         }
@@ -147,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements ComponentCallback
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode==AuthenticationActivity.AUTHENTICATION_DECLINED) this.incompleteAuthentication = true;
         final String resultData = String.valueOf(null != data ? data.getDataString() : null);
         authenticationHandler.authenticationResult(resultCode, resultData);
     }

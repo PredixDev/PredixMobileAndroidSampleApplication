@@ -28,8 +28,8 @@ public class AuthenticationHandler implements AuthHandler {
     public void showAuthenticationUI(String url, AuthHandlerCallback authHandlerCallback) {
         Intent intent = new Intent(parentActivity, AuthenticationActivity.class);
         intent.putExtra("url", url);
-        parentActivity.startActivityForResult(intent, 999);
         this.authHandlerCallback = authHandlerCallback;
+        parentActivity.startActivityForResult(intent, 999);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class AuthenticationHandler implements AuthHandler {
 
     public void authenticationResult(int resultCode, String resultStringData) {
         Log.d(getClass().getName(), "Authentication result " + resultCode + ": " + resultStringData);
-        if (resultCode!=AUTHENTICATION_FINISHED) {
+        if (authHandlerCallback!=null && resultCode!=AUTHENTICATION_FINISHED) {
             authHandlerCallback.authenticationEncounteredError("Incomplete authentication");
         }
     }
