@@ -22,10 +22,12 @@ public class AuthenticationActivity extends Activity {
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.authentication_activity);
         WebView webView = (WebView) findViewById(R.id.authenticationWebView);
+
         webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
+        webView.getSettings().setAllowFileAccessFromFileURLs(true);
         webView.setWebViewClient(new ServiceRouterWebViewClient());
         webView.loadUrl(getIntent().getStringExtra("url"));
     }
