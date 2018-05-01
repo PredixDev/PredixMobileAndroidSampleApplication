@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.webkit.WebView;
 
+import com.ge.predix.mobile.core.AndroidMobileManager;
 import com.ge.predix.mobile.core.ServiceRouterWebViewClient;
 
 
@@ -28,6 +29,12 @@ public class AuthenticationActivity extends Activity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new ServiceRouterWebViewClient());
         webView.loadUrl(getIntent().getStringExtra("url"));
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        AndroidMobileManager.getInstance().onStopAuthentication();
     }
 
     @Override
