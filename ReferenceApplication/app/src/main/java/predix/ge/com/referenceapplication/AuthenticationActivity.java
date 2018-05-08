@@ -32,12 +32,6 @@ public class AuthenticationActivity extends Activity {
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        AndroidMobileManager.getInstance().onStopAuthentication();
-    }
-
-    @Override
     public void onBackPressed() {
         setResult(AUTHENTICATION_DECLINED, this.getIntent());
         finish();

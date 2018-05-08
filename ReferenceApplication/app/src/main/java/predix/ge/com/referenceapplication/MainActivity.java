@@ -153,8 +153,6 @@ public class MainActivity extends AppCompatActivity implements ComponentCallback
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(resultCode==AuthenticationActivity.AUTHENTICATION_DECLINED) this.incompleteAuthentication = true;
-        final String resultData = String.valueOf(null != data ? data.getDataString() : null);
-        authenticationHandler.authenticationResult(resultCode, resultData);
     }
 
     private ViewInterface buildViewInterface() {
